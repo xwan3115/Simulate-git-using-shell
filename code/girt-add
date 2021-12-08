@@ -1,0 +1,41 @@
+#! /bin/dash
+
+# First, we test if .girt is valid
+exist=`ls .girt 2>/dev/null`
+if test -z "$exist"
+then
+    echo "girt-add: error: girt repository directory .girt not found"
+    exit 1
+fi
+
+# Then we test if the usage of girt-add is valid
+if test $# -lt 1
+then
+    echo "usage: girt-add <filenames>"
+fi
+
+# Then we test if the filename is valid (exist in directory)
+# According to 2041 girt-add, the program will exit and not creating index file if there is an invalid file name
+for filename in $@
+do
+    ifexists=`ls $filename 2>/dev/null`
+    if test -z "$ifexists"
+    then
+        # Since girt-add is tracking the change of working file
+        # If this file exists in the index but delete in the current dir
+        # We need to track this change too
+        if test -f .girt/index/$filename
+        then
+            rm .girt/index/$filename
+        else
+            echo "girt-add: error: can not open '$filename'"
+            exit 1
+        fi
+    fi
+done
+
+# Finally, we checked everything and we will copy these files to index
+for file in $@
+do
+    cp $file .girt/index/$file 2>/dev/null
+done

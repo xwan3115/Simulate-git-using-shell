@@ -1,0 +1,78 @@
+#! /bin/dash
+# First of all, always check if the .girt exists
+girtinit=`ls .girt 2>/dev/null`
+if test -z "$girtinit"
+then
+    echo "girt-show: error: girt repository directory .girt not found"
+    exit 1
+fi
+
+# Then we check the usage of the girt-show
+# This script will only have one argument in the form of [0-9]:filename
+if test $# -eq 1
+then
+    # If there is no : in argument
+    colon=`echo "$1"|grep -E ":"`
+    if test -z $colon:
+    then
+        echo "girt-show: error: invalid object $1"
+        exit 1
+    fi
+    # Extract the commitName and filename from argument
+    commitName=`echo "$1"|cut -d":" -f1`
+    fileName=`echo "$1"|cut -d":" -f2`
+
+    # If no commit name then we check index
+    if test -z "$commitName"
+    then
+        # If the filename is not given
+        if test -z "$fileName"
+        then
+            echo "girt-show: error: invalid filename ''"
+            exit 1
+        fi
+        # If filename is given, we check if it exists
+        isfileExist=`ls .girt/index/$fileName 2>/dev/null`
+        if test -f .girt/index/$fileName
+        then
+            :
+        else
+            echo "girt-show: error: '$fileName' not found in index"
+            exit 1
+        fi
+        # If the above test passed, we have corrected input
+        cat .girt/index/$fileName
+    else
+        # If there is a commit name given
+        # First, we check if te commit exists
+        #iscommitExist=`ls .girt/commit_$commitName 2>/dev/null`
+        if test -d .girt/commit_$commitName
+        then
+            :
+        else
+            echo "girt-show: error: unknown commit '$commitName'"
+            exit 1
+        fi
+        # If the filename is not given
+        if test -z "$fileName"
+        then
+            echo "girt-show: error: invalid filename ''"
+            exit 1
+        # If the filename is given, we check if it exists in the commit
+        else
+            #ifexistFile=`echo "$iscommitExist"|grep -E "^$fileName$"`
+            if test -f .girt/commit_$commitName/$fileName
+            then
+                :
+            else
+                echo "girt-show: error: '$fileName' not found in commit $commitName"
+                exit 1
+            fi
+        fi
+        # If the above test is passed
+        cat .girt/commit_$commitName/$fileName
+    fi
+else
+    echo "usage: girt-show <commit>:<filename>"
+    exit 1
+fi

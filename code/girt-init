@@ -1,0 +1,16 @@
+#! /bin/dash
+
+# First we test if the girt repository exists
+ifexists=`ls -d .girt 2>/dev/null`
+
+if test -z "$ifexists"
+# If the respository does not exist,create it
+then
+    mkdir .girt
+    # Create the index folder for later girt-add
+    mkdir .girt/index
+    echo "Initialized empty girt repository in .girt"
+else
+    # If we already have it then we print error message
+    echo "girt-init: error: .girt already exists"
+fi

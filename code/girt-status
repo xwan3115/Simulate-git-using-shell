@@ -1,0 +1,144 @@
+#! /bin/dash
+# First of all, always check if the .girt exists
+if test -d "$girtinit"
+then
+    echo "girt-rm: error: girt repository directory .girt not found"
+    exit 1
+fi
+
+# The files I need to track comes from latest commit, current dir, index
+n=`ls .girt|grep -E "^commit"|cut -d"_" -f2|sort -n|tail -1`
+fileInCommit=`ls .girt/commit_$n 2>/dev/null`
+fileInCurrent=`ls`
+fileInIndex=`ls .girt/index 2>/dev/null`
+
+# This is to make sure there is no empty line
+if test -n "$fileInCommit"
+then
+    all="$fileInCommit\n$fileInCurrent\n$fileInIndex"
+else
+    all="$fileInCurrent\n$fileInIndex"
+fi
+allFile=`echo "$all"|sort|uniq`
+
+# Then we check the status of each file
+for file in $allFile
+do
+    # This is to test if the file exists
+    # Reset the three after each round of loop
+    Incommit=""
+    Inindex=""
+    Incurrent=""
+    
+    # However, there are situations that index and commit are not created
+    if test -d .girt/commit_0
+    then
+        if test -f .girt/commit_$n/$file
+        then
+            Incommit=1
+        fi
+    fi
+
+    if test -d .girt/index
+    then
+        if test -f .girt/index/$file
+        then
+            Inindex=1
+        fi
+    fi
+
+    if test -f "$file"
+    then
+        Incurrent=1
+    fi
+    
+    #echo "$file commit:$Incommit curr:$Incurrent index:$Inindex"
+
+    # Deleted and untracked
+    if test -z "$Inindex"
+    then
+        if test -n "$Incurrent"
+        then
+            echo "$file - untracked"
+            continue
+        else
+            echo "$file - deleted"
+            continue
+        fi
+    fi
+    # File deleted
+    if test -z "$Incurrent" && test -n "$Inindex" && test -n "$Incommit"
+    then
+        diff -q .girt/commit_$n/$file .girt/index/$file >>/dev/null 2>&1
+        if test $? -eq 0
+        then
+            echo "$file - file deleted"
+            continue
+        else
+            echo "$file - file deleted, different changes staged for commit"
+            continue
+        fi
+    fi
+    
+    # If the file exists in index, latest commit and current file
+    # We will test btw index and current and use that result to test the diff
+    # btw index and commit
+    if test -n "$Incurrent" && test -n "$Inindex" && test -n "$Incommit"
+    then
+        # Is the current file same as index file?
+        diff -q $file .girt/index/$file >>/dev/null 2>&1
+        if test $? -eq 0
+        then
+            # If they are the same, are they same as commit?
+            diff -q .girt/index/$file .girt/commit_$n/$file >>/dev/null 2>&1
+            if test $? -eq 0
+            then
+                # All three are equal
+                echo "$file - same as repo"
+                continue
+            else
+                # The index capture the change but have not saved to commit
+                echo "$file - file changed, changes staged for commit"
+                continue
+            fi
+        else
+            # If they are not the same, is index same as commit?
+            diff -q .girt/index/$file .girt/commit_$n/$file >>/dev/null 2>&1
+            if test $? -eq 0
+            then
+                # Index same as commit, index have not captured the change
+                echo "$file - file changed, changes not staged for commit"
+                continue
+            else
+                # All three are different
+                echo "$file - file changed, different changes staged for commit"
+                continue
+            fi
+        fi
+    fi
+
+    # Add to index
+    # If the file is in the index but not in commit
+    if test -n "$Inindex" && test -z "$Incommit"
+    then
+        # If the index file is same as file in current dir
+        diff -q $file .girt/index/$file >>/dev/null 2>&1
+        if test $? -eq 0
+        then
+            echo "$file - added to index"
+            continue
+        else
+            # If they are not the same, there will be two situations
+            if test -n "$Incurrent"
+            then
+                # The file exists in current dir
+                echo "$file - added to index, file changed"
+                continue
+            else
+                # Or the file is deleted
+                echo "$file - added to index, file deleted"
+                continue
+            fi
+        fi
+    fi
+done

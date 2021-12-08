@@ -1,0 +1,124 @@
+#! /bin/dash
+# First of all, always check if the .girt exists
+if test -d "$girtinit"
+then
+    echo "girt-rm: error: girt repository directory .girt not found"
+    exit 1
+fi
+
+# Since rm can handle multiple files in one go
+# It is meaningless to track the number of argument
+# We will put all argument in a for loop to track each one of them
+
+# First we check the first two argument to decide the usage of girt-rm
+for argu in $@
+do
+    # No file name start with -
+    # So, if isOption is defined, then it should match either force 
+    # or cached
+    isOption=`echo "$argu"|grep -E "^-"|tr -d " "`
+    if `echo "$argu"|grep -E -q "^-"`
+    then
+        if test "$isOption" = "--force"
+        then
+            force=1
+            continue
+        elif test "$isOption" = "--cached"
+        then
+            cacheop=1
+            continue
+        else
+            # If the argu starts with - but not any options above
+            # Wrong usage
+            echo "usage girt-rm [--force] [--cached] <filenames>"
+            exit 1
+        fi
+    fi
+#---------------------Finish Checking usage--------------------
+    # If the argu is not an option
+    # We check if this file exists in the index
+    if test -f .girt/index/$argu
+    then
+        # If the force option is on, no error need to be report
+        if test -n "$force"
+        then
+            continue
+        fi
+ 
+        # If the force option is off
+        # First, we check if the file is same as last commit
+        n=`ls .girt|grep -E "^commit"|cut -d"_" -f2|sort -n|tail -1`
+        diff -q .girt/index/$argu .girt/commit_$n/$argu >> /dev/null 2>&1
+        if test $? -eq 0
+        then
+            # No difference in commit and index
+            # If the cached option is not on, then need to check working dirc
+            if test -f "$argu" && test -z "$cacheop"
+            then
+                diff -q $argu .girt/index/$argu 1>/dev/null
+                if test $? -eq 0
+                then
+                    :
+                else
+                    echo "girt-rm: error: '$argu' in the repository is different to the working file"
+                    exit 1
+                fi
+            fi
+        # If it does not exist in working dirc, no error report
+        else
+            # Difference btw index and commit
+            # If cache option is on:
+            if test -f $argu && test -n "$cacheop"
+            then
+                # Check if Index and work file are same
+                diff -q $argu .girt/index/$argu >>/dev/null 2>&1
+                if test $? -eq 0
+                then
+                    :
+                else
+                    echo "girt-rm: error: '$argu' in index is different to both to the working file and the repository"
+                    exit 1
+                fi
+            fi
+            # if the cached option is off
+            if test -z "$cacheop"
+            then
+                diff -q $argu .girt/index/$argu >>/dev/null 2>&1
+                # If the index file is same as working file
+                if test $? -eq 0
+                then
+                    echo "girt-rm: error: '$argu' has staged changes in the index"
+                    exit 1
+                    # If the index file is not same as working file
+                else
+                    echo "girt-rm: error: '$argu' in index is different to both to the working file and the repository"
+                    exit 1
+                fi
+            fi
+        fi
+     # If the force option is on, no need to check
+    else
+        # If any one of the file is not in index, produce error and exit
+        echo "girt-rm: error: '$argu' is not in the girt repository"
+        exit 1
+    fi
+done
+
+# Through the above step, we have made sure that the file is ok to delete
+for file in $@
+do
+    # Skip the option
+    if test "$file" = "--force" || test "$file" = "--cached"
+    then
+        continue
+    fi
+
+    # Check if the cache option is on
+    if test -n "$cacheop"
+    then
+        rm .girt/index/$file
+    else
+        rm .girt/index/$file
+        rm $file
+    fi
+done

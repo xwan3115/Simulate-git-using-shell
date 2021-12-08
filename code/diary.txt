@@ -1,0 +1,76 @@
+Date: 02/04/2021
+    1. Start 10:00
+       Stop  15:30
+    2. Activity
+       a) Reading the specification about the assigment
+       b) Coding and debugging
+    3. Comment
+       a) Getting to know what is needed to do the assignment
+       b) Starting doing thins and testing using the autotest and 2041 girt-*
+       c) Finished girt-init and girt-add
+
+Date: 03/04/2021
+    1. Start 10:00
+       Stop  15:30
+    2. Activity
+       a)Coding
+    3. Comment
+       a) Finished girt-commit and girt-commit [-a]
+
+Date: 04/04/2021
+    1. Start 10:00
+       Stop  13:14
+    2. Activity
+       a)Debugging
+    3. Comment
+       Find a problem with girt-commit. It should create a empty commit with
+       -a option if there is nothing in current directory
+       Find a problem with girt-add. If the file is removed from current dir 
+       it should rm from index too
+    -----------------------------------------------------
+    1. Start 15:00
+       Stop  24:00
+    2. Activity
+       a)Debugging
+       b)Coding
+    3. Comment
+       Started on girt-rm and try to figure out the error output
+       Finished girt-log and girt-show
+    -----------------------------------------------------
+
+Date: 05/04/2021
+    1. Start 09:00
+       Stop  14:00
+    2. Activity
+       a)Debugging
+       b)Coding
+    3. Comment
+       Debugging the girt-rm
+       Started dong girt-status
+    ----------------------------
+    1. Start 18:00
+       Stop  24:00
+    2. Activity
+       a)Debugging
+       b)Coding
+    3. Comment
+       Finished status and trying to debug
+
+Date: 06/04/2021
+    1. Start 00:00
+       Stop  04:00
+    2. Activity
+       a)Debugging
+       b)Coding
+    3. Comment
+       Finished the coding part
+    ----------------------------
+    1. Start 05:00
+       Stop  11:00
+    2. Activity
+       a)Checking comment
+       b)Modify the test script
+    3. Comment
+       Finished
+       
+       
